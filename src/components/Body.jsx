@@ -52,7 +52,7 @@ export function Body() {
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm ml-2"
-                  onClick={() => send('RESET_FILTERS')}
+                  onClick={() => send('RESET_FILTER')}
                 >
                   reset
                 </button>

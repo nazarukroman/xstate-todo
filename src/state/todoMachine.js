@@ -10,20 +10,24 @@ const fetchTodos = (context, event) =>
         resolve(todosList.filter((item) => item.title.includes(event.str)));
       }
       resolve(todosList);
-    }, 500);
+    }, 1500);
   });
 
 export const todoMachine = Machine({
   id: 'todos',
-  initial: 'loading',
+  initial: 'request',
   context: {
     list: [],
     selected: [],
     error: {},
   },
   states: {
+    request: {
+      on: { FETCH_TODOS: { target: 'loading' } },
+    },
     loading: {
       invoke: {
+        id: 'fetch data',
         src: fetchTodos,
         onDone: {
           target: 'success',
@@ -43,8 +47,8 @@ export const todoMachine = Machine({
       on: {
         COMPLETE_TODO: {
           actions: assign({
-            selected: (context, event) => {
-              const { selected } = context;
+            selected: (ctx, event) => {
+              const { selected } = ctx;
 
               if (selected.includes(event.id)) {
                 return selected.filter((item) => item !== event.id);
@@ -55,28 +59,28 @@ export const todoMachine = Machine({
         },
         ADD_TODO: {
           actions: assign({
-            list: (context, event) => [
-              ...context.list,
+            list: (ctx, event) => [
+              ...ctx.list,
               { id: nanoid(), title: event.title },
             ],
           }),
         },
         REMOVE_TODO: {
           actions: assign({
-            list: (context, event) =>
-              context.list.filter((item) => item.id !== event.id),
-            selected: (context, event) =>
-              context.selected.filter((item) => item !== event.id),
+            list: (ctx, event) =>
+              ctx.list.filter((item) => item.id !== event.id),
+            selected: (ctx, event) =>
+              ctx.selected.filter((item) => item.id !== event.id),
           }),
         },
         FILTER_TODOS: {
-          target: 'loading',
-          actions: send((context, event) => ({
+          target: 'request',
+          actions: send((ctx, event) => ({
             type: 'FETCH_TODOS',
             str: event.str,
           })),
         },
-        RESET_FILTERS: {
+        RESET_FILTER: {
           target: 'loading',
           actions: send('FETCH_TODOS'),
         },
@@ -84,7 +88,10 @@ export const todoMachine = Machine({
     },
     failure: {
       on: {
-        RETRY: { target: 'loading', actions: send('FETCH_TODOS') },
+        RETRY: {
+          target: 'request',
+          actions: send('FETCH_TODOS'),
+        },
       },
     },
   },
